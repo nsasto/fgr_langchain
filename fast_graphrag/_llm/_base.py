@@ -1,4 +1,5 @@
 """LLM Services module."""
+import os
 import re
 
 from dataclasses import dataclass, field
@@ -53,6 +54,12 @@ class BaseLLMService:
     base_url: Optional[str] = field(default=None)
     api_key: Optional[str] = field(default=None)
     llm_async_client: Any = field(init=False, default=None)
+    max_requests_concurrent: int = field(default=int(os.getenv("CONCURRENT_TASK_LIMIT", 1024)))
+    max_requests_per_minute: int = field(default=500)
+    max_requests_per_second: int = field(default=60)
+    rate_limit_concurrency: bool = field(default=True)
+    rate_limit_per_minute: bool = field(default=False)
+    rate_limit_per_second: bool = field(default=False)
 
     def count_tokens(self, text: str) -> int:
         """
@@ -103,6 +110,12 @@ class BaseEmbeddingService:
     model: Optional[str] = field(default="text-embedding-3-small")
     base_url: Optional[str] = field(default=None)
     api_key: Optional[str] = field(default=None)
+    max_requests_concurrent: int = field(default=int(os.getenv("CONCURRENT_TASK_LIMIT", 1024)))
+    max_requests_per_minute: int = field(default=500) # Tier 1 OpenAI RPM
+    max_requests_per_second: int = field(default=100)
+    rate_limit_concurrency: bool = field(default=True)
+    rate_limit_per_minute: bool = field(default=True)
+    rate_limit_per_second: bool = field(default=False)
 
     embedding_async_client: Any = field(init=False, default=None)
 
@@ -119,3 +132,10 @@ class BaseEmbeddingService:
             list[float]: The embedding vector as a list of floats.
         """
         raise NotImplementedError
+
+class NoopAsyncContextManager:
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        pass

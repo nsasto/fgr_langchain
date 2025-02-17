@@ -35,29 +35,31 @@ from google.genai import types, errors
 from vertexai.preview.tokenization import get_tokenizer_for_model
 from json_repair import repair_json
 
-SAFETY_SETTINGS = [
-    types.SafetySetting(
-        category=types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-        threshold=types.HarmBlockThreshold.BLOCK_NONE,
-    ),
-    types.SafetySetting(
-        category=types.HarmCategory.HARM_CATEGORY_HARASSMENT,
-        threshold=types.HarmBlockThreshold.BLOCK_NONE,
-    ),
-    types.SafetySetting(
-        category=types.HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-        threshold=types.HarmBlockThreshold.BLOCK_NONE,
-    ),
-    types.SafetySetting(
-        category=types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-        threshold=types.HarmBlockThreshold.BLOCK_NONE,
-    ),
-    types.SafetySetting(
-        category=types.HarmCategory.HARM_CATEGORY_CIVIC_INTEGRITY,
-        threshold=types.HarmBlockThreshold.BLOCK_NONE,
-    ),
-]
 
+def default_safety_settings() -> List[types.SafetySetting]:
+    return [
+        types.SafetySetting(
+            category=types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+            threshold=types.HarmBlockThreshold.BLOCK_NONE,
+        ),
+        types.SafetySetting(
+            category=types.HarmCategory.HARM_CATEGORY_HARASSMENT,
+            threshold=types.HarmBlockThreshold.BLOCK_NONE,
+        ),
+        types.SafetySetting(
+            category=types.HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+            threshold=types.HarmBlockThreshold.BLOCK_NONE,
+        ),
+        types.SafetySetting(
+            category=types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+            threshold=types.HarmBlockThreshold.BLOCK_NONE,
+        ),
+        types.SafetySetting(
+            category=types.HarmCategory.HARM_CATEGORY_CIVIC_INTEGRITY,
+            threshold=types.HarmBlockThreshold.BLOCK_NONE,
+        ),
+    ]
+    
 # Helper function to execute an asynchronous operation with inner retry logic.
 async def _execute_with_inner_retries(
     operation: Callable[[], Awaitable[Any]],
@@ -108,13 +110,13 @@ class GeminiLLMService(BaseLLMService):
     client: Literal["gemini", "vertex"] = field(default="gemini")
     api_key: Optional[str] = field(default=None)
     temperature: float = field(default=0.7)
+    candidate_count: int = field(default=1)
     max_requests_concurrent: int = field(default=int(os.getenv("CONCURRENT_TASK_LIMIT", 1024)))
     max_requests_per_minute: int = field(default=2000) # Gemini Flash 2.0 has a paid developer API limit of 2000 RPM
     max_requests_per_second: int = field(default=500)
     project_id: Optional[str] = field(default=None)
     location: Optional[str] = field(default=None)
-    safety_settings: list[types.SafetySetting] = field(default=SAFETY_SETTINGS)
-    candidate_count: int = field(default=1)
+    safety_settings: list[types.SafetySetting] = field(default_factory=default_safety_settings)
 
     def __post_init__(self):
         """

@@ -243,4 +243,4 @@ class OpenAIEmbeddingService(BaseEmbeddingService):
         async with self.embedding_max_requests_concurrent:
             async with self.embedding_per_minute_limiter:
                 async with self.embedding_per_second_limiter:
-                        return await self.embedding_async_client.embeddings.create(model=model, input=input, encoding_format="float")
+                        return await self.embedding_async_client.embeddings.create(model=model, input=input, dimensions=self.embedding_dim, encoding_format="float")

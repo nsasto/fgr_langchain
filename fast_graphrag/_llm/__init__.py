@@ -6,8 +6,11 @@ __all__ = [
     "format_and_send_prompt",
     "OpenAIEmbeddingService",
     "OpenAILLMService",
+    "GeminiLLMService",
+    "GeminiEmbeddingService",
 ]
 
 from ._base import BaseEmbeddingService, BaseLLMService, format_and_send_prompt
 from ._default import DefaultEmbeddingService, DefaultLLMService
 from ._llm_openai import OpenAIEmbeddingService, OpenAILLMService
+from ._llm_genai import GeminiLLMService, GeminiEmbeddingService

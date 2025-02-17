@@ -22,7 +22,16 @@ async def format_and_send_prompt(
     response_model: Type[T_model],
     **args: Any,
 ) -> Tuple[T_model, list[dict[str, str]]]:
-    """Get a prompt, format it with the supplied args, and send it to the LLM.
+    """
+    Get a prompt, format it with the supplied args, and send it to the LLM.
+
+    If a system prompt is provided (i.e. PROMPTS contains a key named
+    '{prompt_key}_system'), it will use both the system and prompt entries:
+        - System prompt: PROMPTS[prompt_key + '_system']
+        - Message prompt: PROMPTS[prompt_key + '_prompt']
+
+    Otherwise, it will default to using the single prompt defined by:
+        - PROMPTS[prompt_key]
 
     Args:
         prompt_key (str): The key for the prompt in the PROMPTS dictionary.
@@ -34,16 +43,23 @@ async def format_and_send_prompt(
         **args (Any): Additional keyword arguments to pass to the LLM.
 
     Returns:
-        T_model: The response from the LLM.
+        Tuple[T_model, list[dict[str, str]]]: The response from the LLM.
     """
-    # Get the prompt from the PROMPTS dictionary
-    prompt = PROMPTS[prompt_key]
+    system_key = prompt_key + '_system'
 
-    # Format the prompt with the supplied arguments
-    formatted_prompt = prompt.format(**format_kwargs)
+    if system_key in PROMPTS:
+        # Use separate system and prompt entries
+        system = PROMPTS[system_key]
+        prompt = PROMPTS[prompt_key + '_prompt']
+        formatted_system = system.format(**format_kwargs)
+        formatted_prompt = prompt.format(**format_kwargs)
+        return await llm.send_message(system_prompt=formatted_system, prompt=formatted_prompt, response_model=response_model, **args)
+    else:
+        # Default: use the single prompt entry
+        prompt = PROMPTS[prompt_key]
+        formatted_prompt = prompt.format(**format_kwargs)
+        return await llm.send_message(prompt=formatted_prompt, response_model=response_model, **args)
 
-    # Send the formatted prompt to the LLM
-    return await llm.send_message(prompt=formatted_prompt, response_model=response_model, **args)
 
 
 @dataclass

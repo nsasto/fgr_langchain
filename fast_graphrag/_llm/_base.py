@@ -1,4 +1,5 @@
 """LLM Services module."""
+import re
 
 from dataclasses import dataclass, field
 from typing import Any, Optional, Tuple, Type, TypeVar, Union
@@ -10,6 +11,7 @@ from fast_graphrag._models import BaseModelAlias
 from fast_graphrag._prompt import PROMPTS
 
 T_model = TypeVar("T_model", bound=Union[BaseModel, BaseModelAlias])
+TOKEN_PATTERN = re.compile(r'\w+|[^\w\s]', re.UNICODE)
 
 
 async def format_and_send_prompt(
@@ -51,6 +53,22 @@ class BaseLLMService:
     base_url: Optional[str] = field(default=None)
     api_key: Optional[str] = field(default=None)
     llm_async_client: Any = field(init=False, default=None)
+
+    def count_tokens(self, text: str) -> int:
+        """
+        Returns the number of tokens for a given text using the encoding appropriate for the model.
+        """
+        return len(TOKEN_PATTERN.findall(text))
+
+
+    def is_within_token_limit(self, text: str, token_limit: int):
+        """
+        Lightweight check to determine if `text` fits within `token_limit` tokens.
+        Returns the token count (an int) if it is less than or equal to the limit,
+        otherwise returns False.
+        """
+        token_count = self.count_tokens(text)
+        return token_count if token_count <= token_limit else False
 
     async def send_message(
         self,

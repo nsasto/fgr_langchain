@@ -1,5 +1,4 @@
-"""LLM Services module."""
-import os
+"""OpenAI-compatible LLM Services module."""
 import asyncio
 from dataclasses import dataclass, field
 from itertools import chain
@@ -22,6 +21,8 @@ from fast_graphrag._types import BaseModelAlias
 from fast_graphrag._utils import logger, throttle_async_func_call
 
 from ._base import BaseEmbeddingService, BaseLLMService, T_model
+from ._base import BaseEmbeddingService, BaseLLMService, T_model, TOKEN_PATTERN
+import tiktoken
 
 TIMEOUT_SECONDS = 180.0
 
@@ -36,6 +37,12 @@ class OpenAILLMService(BaseLLMService):
     api_version: Optional[str] = field(default=None)
 
     def __post_init__(self):
+        self.encoding = None
+        try:
+            self.encoding = tiktoken.encoding_for_model(self.model)
+        except Exception as e:
+            logger.info(f"LLM: failed to load tokenizer for model '{self.model}' ({e}). Falling back to naive tokenization.")
+            self.encoding = None
         if self.client == "azure":
             assert (
                 self.base_url is not None and self.api_version is not None
@@ -55,8 +62,18 @@ class OpenAILLMService(BaseLLMService):
             )
         else:
             raise ValueError("Invalid client type. Must be 'openai' or 'azure'")
+        
         logger.debug("Initialized OpenAILLMService with patched OpenAI client.")
 
+    def count_tokens(self, text: str) -> int:
+        """
+        Returns the number of tokens for a given text using the encoding appropriate for the model.
+        """
+        if self.encoding:
+             return len(self.encoding.encode(text))
+        else:
+             return len(TOKEN_PATTERN.findall(text))
+    
     @throttle_async_func_call(max_concurrent=int(os.getenv("CONCURRENT_TASK_LIMIT", 1024)), stagger_time=0.001, waiting_time=0.001)
     async def send_message(
         self,

@@ -332,9 +332,9 @@ class EdgeUpsertPolicy_UpsertValidAndMergeSimilarByLLM(BaseEdgeUpsertPolicy[TRel
         self, llm: BaseLLMService, target: BaseGraphStorage[GTNode, TRelation, TId], source_edges: Iterable[TRelation]
     ) -> Tuple[BaseGraphStorage[GTNode, TRelation, TId], Iterable[Tuple[TIndex, TRelation]]]:
         grouped_edges: Dict[Tuple[TId, TId], List[TRelation]] = defaultdict(lambda: [])
-        upserted_edges: List[List[Tuple[TIndex, TRelation]]] = []
-        new_edges: List[List[TRelation]] = []
-        to_delete_edges: List[List[TIndex]] = []
+        upserted_edges: Tuple[List[Tuple[TIndex, TRelation]], ...] = ()
+        new_edges: Tuple[List[TRelation], ...] = ()
+        to_delete_edges: Tuple[List[TIndex], ...] = ()
         for edge in source_edges:
             grouped_edges[(edge.source, edge.target)].append(edge)
 

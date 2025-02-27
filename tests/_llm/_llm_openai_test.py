@@ -23,7 +23,7 @@ class TestOpenAILLMService(unittest.IsolatedAsyncioTestCase):
         service.llm_async_client = AsyncMock()
         service.llm_async_client.chat.completions.create = AsyncMock(return_value=mock_response)
 
-        response, messages = await service.send_message(prompt="Hello", model="gpt-4o-mini")
+        response, messages = await service.send_message(prompt="Hello")
 
         self.assertEqual(response, mock_response)
         self.assertEqual(messages[-1]["role"], "assistant")
@@ -34,7 +34,7 @@ class TestOpenAILLMService(unittest.IsolatedAsyncioTestCase):
         service.llm_async_client.chat.completions.create.return_value = None
 
         with self.assertRaises(LLMServiceNoResponseError):
-            await service.send_message(prompt="Hello", model="gpt-4o-mini")
+            await service.send_message(prompt="Hello")
 
     async def test_send_message_rate_limit_error(self):
         service = OpenAILLMService()
@@ -47,7 +47,7 @@ class TestOpenAILLMService(unittest.IsolatedAsyncioTestCase):
             async_open_ai
         )
 
-        response, messages = await service.send_message(prompt="Hello", model="gpt-4o-mini", response_model=None)
+        response, messages = await service.send_message(prompt="Hello", response_model=None)
 
         self.assertEqual(response, mock_response)
         self.assertEqual(messages[-1]["role"], "assistant")
@@ -63,7 +63,7 @@ class TestOpenAILLMService(unittest.IsolatedAsyncioTestCase):
             async_open_ai
         )
 
-        response, messages = await service.send_message(prompt="Hello", model="gpt-4o-mini")
+        response, messages = await service.send_message(prompt="Hello")
 
         self.assertEqual(response, mock_response)
         self.assertEqual(messages[-1]["role"], "assistant")
@@ -75,7 +75,7 @@ class TestOpenAILLMService(unittest.IsolatedAsyncioTestCase):
         service.llm_async_client.chat.completions.create = AsyncMock(return_value=mock_response)
 
         response, messages = await service.send_message(
-            prompt="Hello", system_prompt="System prompt", model="gpt-4o-mini"
+            prompt="Hello", system_prompt="System prompt"
         )
 
         self.assertEqual(response, mock_response)
@@ -89,7 +89,7 @@ class TestOpenAILLMService(unittest.IsolatedAsyncioTestCase):
         service.llm_async_client.chat.completions.create = AsyncMock(return_value=mock_response)
 
         history = [{"role": "user", "content": "Previous message"}]
-        response, messages = await service.send_message(prompt="Hello", history_messages=history, model="gpt-4o-mini")
+        response, messages = await service.send_message(prompt="Hello", history_messages=history)
 
         self.assertEqual(response, mock_response)
         self.assertEqual(messages[0]["role"], "user")

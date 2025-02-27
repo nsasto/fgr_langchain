@@ -66,12 +66,12 @@ PROMPTS["entity_relationship_extraction_prompt"] = """**IMPORTANT JSON FORMATTIN
 
 # INPUT DATA
 <<ENTITY_TYPES_START>>
-**Entity Types**: 
+**Entity Types**:
 {entity_types}
 <<ENTITY_TYPES_END>>
 
 <<DOCUMENT_START>>
-**Document**: 
+**Document**:
 {input_text}
 <<DOCUMENT_END>>
 

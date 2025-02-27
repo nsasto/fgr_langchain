@@ -18,7 +18,7 @@ class TestFormatAndSendPrompt(unittest.IsolatedAsyncioTestCase):
 
     @patch("fast_graphrag._llm._base.PROMPTS", PROMPTS)
     async def test_format_and_send_prompt(self):
-        mock_llm = AsyncMock(spec=BaseLLMService())
+        mock_llm = AsyncMock(spec=BaseLLMService(model=""))
         answer = TestModel(answer="TEST")
         mock_response = (answer, [{"key": "value"}])
         mock_llm.send_message = AsyncMock(return_value=mock_response)
@@ -38,7 +38,7 @@ class TestFormatAndSendPrompt(unittest.IsolatedAsyncioTestCase):
 
     @patch("fast_graphrag._llm._base.PROMPTS", PROMPTS)
     async def test_format_and_send_prompt_with_additional_args(self):
-        mock_llm = AsyncMock(spec=BaseLLMService())
+        mock_llm = AsyncMock(spec=BaseLLMService(model=""))
         answer = TestModel(answer="TEST")
         mock_response = (answer, [{"key": "value"}])
         mock_llm.send_message = AsyncMock(return_value=mock_response)

@@ -40,7 +40,7 @@ class BaseGraphRAG(Generic[GTEmbedding, GTHash, GTChunk, GTNode, GTEdge, GTId]):
     entity_types: List[str] = field()
     n_checkpoints: int = field(default=0)
 
-    llm_service: BaseLLMService = field(init=False, default_factory=lambda: BaseLLMService())
+    llm_service: BaseLLMService = field(init=False, default_factory=lambda: BaseLLMService(model=""))
     chunking_service: BaseChunkingService[GTChunk] = field(init=False, default_factory=lambda: BaseChunkingService())
     information_extraction_service: BaseInformationExtractionService[GTChunk, GTNode, GTEdge, GTId] = field(
         init=False,

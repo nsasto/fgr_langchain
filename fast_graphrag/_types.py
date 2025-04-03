@@ -16,7 +16,6 @@ from ._models import BaseModelAlias, dump_to_csv, dump_to_reference_list
 
 @dataclass
 class TSerializable:
-  F_TO_CONTEXT: ClassVar[List[str]] = []
 
   @classmethod
   def to_dict(
@@ -53,8 +52,7 @@ GTId = TypeVar("GTId")
 
 @dataclass
 class BTNode(TSerializable):
-  name: Any
-
+    pass
 
 GTNode = TypeVar("GTNode", bound=BTNode)
 
@@ -64,8 +62,7 @@ class BTEdge(TSerializable):
   source: Any
   target: Any
 
-  @staticmethod
-  def to_attrs(edge: Optional[Any] = None, edges: Optional[Iterable[Any]] = None, **kwargs: Any) -> Dict[str, Any]:
+  def to_attrs(self, edge: Optional[Any] = None, edges: Optional[Iterable[Any]] = None, **kwargs: Any) -> Dict[str, Any]:
     raise NotImplementedError
 
 
@@ -93,6 +90,9 @@ TScore: TypeAlias = np.float32
 TIndex: TypeAlias = int
 TId: TypeAlias = str
 
+# Storage
+Namespace: TypeAlias = str
+
 
 @dataclass
 class TDocument:
@@ -104,8 +104,6 @@ class TDocument:
 
 @dataclass
 class TChunk(BTChunk):
-  F_TO_CONTEXT = ["content", "metadata"]
-
   id: THash = field()
   content: str = field()
   metadata: Dict[str, Any] = field(default_factory=dict)
@@ -117,8 +115,6 @@ class TChunk(BTChunk):
 # Graph types
 @dataclass
 class TEntity(BaseModelAlias, BTNode):
-  F_TO_CONTEXT = ["name", "description"]
-
   name: str = field()
   type: str = field()
   description: str = field()
@@ -129,7 +125,11 @@ class TEntity(BaseModelAlias, BTNode):
       s += f"\n[DESCRIPTION] {self.description}"
     return s
 
-  class Model(BaseModelAlias.Model, alias="Entity"):
+  class Model(BaseModelAlias.Model):
+    """Pydantic model for TEntity."""
+
+    class Config:
+      alias = "Entity"
     name: str = Field(..., description="Name of the entity", json_schema_extra={"example": ""})
     type: str = Field(..., description="Type of the entity", json_schema_extra={"example": ""})
     desc: str = Field(..., description="Description of the entity", json_schema_extra={"example": ""})
@@ -151,16 +151,14 @@ class TEntity(BaseModelAlias, BTNode):
 
 @dataclass
 class TRelation(BaseModelAlias, BTEdge):
-  F_TO_CONTEXT = ["source", "target", "description"]
-
   source: str = field()
   target: str = field()
   description: str = field()
   chunks: List[THash] | None = field(default=None)
 
   @staticmethod
-  def to_attrs(
-    edge: Optional["TRelation"] = None,
+  def to_attrs(self,
+               edge: Optional["TRelation"] = None,
     edges: Optional[Iterable["TRelation"]] = None,
     include_source_target: bool = False,
     **_,
@@ -195,8 +193,12 @@ class TRelation(BaseModelAlias, BTEdge):
     else:
       return {}
 
-  class Model(BaseModelAlias.Model, alias="Relationship"):
-    source: str = Field(..., description="Name of the source entity", json_schema_extra={"example": ""})
+  class Model(BaseModelAlias.Model):
+    """Pydantic model for TRelation."""
+
+    class Config:
+      alias = "Relationship"
+      source: str = Field(..., description="Name of the source entity", json_schema_extra={"example": ""})
     target: str = Field(..., description="Name of the target entity", json_schema_extra={"example": ""})
     # alternative description "Explanation of why the source entity and the target entity are related to each other"
     desc: str = Field(
@@ -211,13 +213,15 @@ class TRelation(BaseModelAlias, BTEdge):
 
     @field_validator("source", mode="before")
     @classmethod
-    def uppercase_source(cls, value: str):
-      return value.upper() if value else value
+    def uppercase_source(cls, value: str) -> str:
+        """Convert the source entity name to uppercase."""
+        return value.upper() if value else value
 
     @field_validator("target", mode="before")
     @classmethod
-    def uppercase_target(cls, value: str):
-      return value.upper() if value else value
+    def uppercase_target(cls, value: str) -> str:
+        """Convert the target entity name to uppercase."""
+        return value.upper() if value else value
 
 
 @dataclass
@@ -225,7 +229,11 @@ class TGraph(BaseModelAlias):
   entities: List[TEntity] = field()
   relationships: List[TRelation] = field()
 
-  class Model(BaseModelAlias.Model, alias="Graph"):
+  class Model(BaseModelAlias.Model):
+    """Pydantic model for TGraph."""
+
+    class Config:
+        alias = "Graph"
     entities: List[TEntity.Model] = Field(description="List of extracted entities", json_schema_extra={"example": []})
     relationships: List[TRelation.Model] = Field(
       description="Relationships between the entities", json_schema_extra={"example": []}
@@ -332,7 +340,6 @@ class TContext(Generic[GTNode, GTEdge, GTHash, GTChunk]):
         context.append("\n## Sources: Not provided\n")
     return "\n".join(context)
 
-
 @dataclass
 class TQueryResponse(Generic[GTNode, GTEdge, GTHash, GTChunk]):
   """A class for representing a query response."""
@@ -341,15 +348,27 @@ class TQueryResponse(Generic[GTNode, GTEdge, GTHash, GTChunk]):
   context: TContext[GTNode, GTEdge, GTHash, GTChunk]
 
   def to_dict(self) -> Dict[str, Any]:
-    """Convert the query response to a dictionary."""
+    """Convert the query response to a dictionary.
+    Returns:
+        A dictionary containing the response and context information. The context
+        includes lists of entities, relations, and chunks.
+
+        For entities, relations, and chunks, the context contains a list of tuples,
+        where each tuple consists of a dictionary representing the object's
+        attributes and a score (float).
+
+        Example:
+        {
+            "response": "The answer to the query",
+            "context": {"entities": [({"name": "entity1", "type": "type1", "description": "desc1"}, 0.5), ...],
+                        "relations": [({"source": "entity1", "target": "entity2", "description": "rel1", "chunks": [123, 456]}, 0.8), ...],
+                        "chunks": [({"id": 123, "content": "chunk content", "metadata": {"source": "doc1"}}, 0.9), ...],
+                       },
+        }
+    """
     return {
-      "response": self.response,
-      "context": {
-        "entities": [(e.to_dict(e, include_fields=e.F_TO_CONTEXT), float(s)) for e, s in self.context.entities],
-        "relations": [(r.to_dict(r, include_fields=r.F_TO_CONTEXT), float(s)) for r, s in self.context.relations],
-        "chunks": [(c.to_dict(c, include_fields=c.F_TO_CONTEXT), float(s)) for c, s in self.context.chunks],
-      },
-    }
+        "response": self.response,
+        "context": {k: [(obj.to_dict(), score) for obj, score in getattr(self.context, k)] for k in ["entities", "relations", "chunks"]}}
 
   # All the machinery to format references
   ####################################################################################################

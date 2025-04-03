@@ -11,8 +11,8 @@ __all__ = [
     'DefaultGraphStorageConfig',
     'DefaultVectorStorageConfig',
 ]
-
-from ._base import BaseBlobStorage, BaseGraphStorage, BaseIndexedKeyValueStorage, BaseVectorStorage, Namespace
+from typing import TypeAlias
+from ._base import BaseBlobStorage, BaseGraphStorage, BaseIndexedKeyValueStorage, BaseVectorStorage
 from ._default import (
     DefaultBlobStorage,
     DefaultGraphStorage,

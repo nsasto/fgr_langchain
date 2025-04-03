@@ -1,4 +1,3 @@
-import asyncio
 from typing import Any, Dict, List, Optional
 
 from fast_graphrag._exceptions import InvalidStorageError
@@ -15,15 +14,15 @@ async def test_insertion_and_query():
     """Tests the insertion and query functionality of the BaseGraphRAG class."""
     try:
         # Create LangChainGraphDB and LangChainVDB instances
-        graph_db: BaseStorage = LangChainGraphDB()
-        vector_db: BaseStorage = LangChainVDB()
+        graph_db = LangChainGraphDB()
+        vector_db = LangChainVDB()
+
+        await graph_db.insert_start()
         
         # Create BaseStateManagerService instance
-        state_manager: BaseStateManagerService[Node, Edge, str, Chunk, str, Vector] = BaseStateManagerService(
-            workspace=None,
-            storage=graph_db
-        )
+        state_manager: BaseStateManagerService[Node, Edge, str, Chunk, str, List[float]] = BaseStateManagerService(storage=graph_db)
 
+        await state_manager.query_start()
         # Create BaseGraphRAG instance
         graph_rag: BaseGraphRAG[Vector, str, Chunk, Node, Edge, str] = BaseGraphRAG(
             working_dir=".",
@@ -31,8 +30,7 @@ async def test_insertion_and_query():
             example_queries="Test Queries",
             entity_types=["Test Entity"],
         )
-        graph_rag.state_manager=state_manager
-        graph_rag.llm_service = BaseLLMService()
+        graph_rag.state_manager = state_manager
 
         # Data to insert
         data_to_insert: List[str] = [
@@ -48,18 +46,23 @@ async def test_insertion_and_query():
 
         # Insert data
         logger.info("Inserting data...")
-        await graph_rag.async_insert(content=data_to_insert, metadata=metadata_list, params=InsertParam())
+        await graph_rag.insert(content=data_to_insert, metadata=metadata_list, params=InsertParam())
         logger.info("Data insertion completed.")
 
         # Query data
         logger.info("Querying data...")
         result = graph_rag.query(query="What is the data?", params=QueryParam())
         logger.info("Data query completed.")
-
+        
         logger.info(f"Query result: {result.response}")
+
+        await graph_db.insert_done()
+        await state_manager.query_done()
 
     except InvalidStorageError as e:
         logger.error(f"Error interacting with storage: {e}")
+        await graph_db.insert_done()
+        await state_manager.query_done()
         raise
     except Exception as e:
         logger.error(f"An unexpected error occurred: {e}")
@@ -67,4 +70,5 @@ async def test_insertion_and_query():
 
 
 if __name__ == "__main__":
+    import asyncio
     asyncio.run(test_insertion_and_query())

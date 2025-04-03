@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, Field
 from typing import (
     Any,
     Awaitable,
@@ -10,22 +10,47 @@ from typing import (
     Optional,
     Tuple,
     Union,
+    Final,
+    Literal,
 )
-from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
+from fast_graphrag._types import (
+    GTBlob,
+    GTEdge,
+    GTEmbedding,
+    GTId,
+    GTKey,
+    GTNode,
+    GTValue,
+    TIndex,
+    TScore,
+)
+from fast_graphrag._types import Namespace
+from scipy.sparse import csr_matrix
+from fast_graphrag._utils import logger
+from abc import ABC, abstractmethod
+from typing import Callable
 
 @dataclass
 class BaseStorage:
+    """Base class for all storage implementations.
+
+    Attributes:
+        config (Optional[Any]): Configuration for the storage.
+        namespace (Optional[Namespace]): Namespace for the storage.
+    """
+
     config: Optional[Any] = field()
     namespace: Optional[Namespace] = field(default=None)
+
     _mode: Optional[Literal["insert", "query"]] = field(init=False, default=None)
     _in_progress: Optional[bool] = field(init=False, default=None)
 
     def set_in_progress(self, in_progress: bool) -> None:
         self._in_progress = in_progress
 
-    @final
+    @Final
     async def insert_start(self):
         if self._mode == "query":
             logger.info("Switching from query to insert mode.")
@@ -42,11 +67,11 @@ class BaseStorage:
         if self._in_progress is not True:
             await self._insert_start()
 
-    @final
+    @Final
     async def query_start(self):
         if self._mode == "insert":
             logger.info("Switching from insert to query mode.")
-            if self._in_progress is not False:
+            if self._in_progress is not None:
                 t = (
                     f"[{self.__class__.__name__}] Cannot being query before commiting insert operations."
                     "Committing insert operations now."
@@ -59,24 +84,24 @@ class BaseStorage:
         if self._in_progress is not True:
             await self._query_start()
 
-    @final
+    @Final
     async def insert_done(self) -> None:
         if self._mode == "query":
             t = f"[{self.__class__.__name__}] Trying to commit insert operations in query mode."
             logger.error(t)
         else:
-            if self._in_progress is not False:
+            if self._in_progress is not None:
                 await self._insert_done()
             else:
                 logger.warning(f"[{self.__class__.__name__}] No insert operations to commit.")
 
-    @final
+    @Final
     async def query_done(self) -> None:
         if self._mode == "insert":
             t = f"[{self.__class__.__name__}] Trying to commit query operations in insert mode."
             logger.error(t)
         else:
-            if self._in_progress is not False:
+            if self._in_progress is not None:
                 await self._query_done()
             else:
                 logger.warning(f"[{self.__class__.__name__}] No query operations to commit.")
@@ -99,10 +124,6 @@ class BaseStorage:
         if self._mode == "insert":
             logger.error("Trying to commit query operations in insert mode.")
 
-
-####################################################################################################
-# Blob Storage
-####################################################################################################
 
 
 @dataclass

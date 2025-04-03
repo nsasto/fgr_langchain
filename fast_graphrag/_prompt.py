@@ -2,7 +2,7 @@
 
 from typing import Any, Dict
 
-PROMPTS: Dict[str, Any] = {}
+PROMPTS: Dict[str, Any] = {}  # type: ignore
 
 ## NEW
 

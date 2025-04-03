@@ -8,8 +8,9 @@ An experiemnt to enhance [fast-graphrag](https://github.com/circlemind-ai/fast-g
 1.  Adding an abstraction layer for storage.
 2.  Integrating with LangChain's graph storage options.
 3.  Integrating with LangChain's vector storage options.
-4.  Using LangChain for chunking.
-5.  Keeping the existing storage implementations for backwards compatibility.
+4.  Integrating with LangChain's LLM options.
+5.  Using LangChain for chunking.
+6.  Keeping the existing storage implementations for backwards compatibility.
 
 with luck, this will create extensibility without impacting the performance advantage
 

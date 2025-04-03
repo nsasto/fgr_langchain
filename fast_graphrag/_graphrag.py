@@ -2,7 +2,6 @@
 
 from dataclasses import dataclass, field
 from typing import Any, Dict, Generic, List, Optional, Tuple, Union
-
 from fast_graphrag._llm import BaseLLMService, format_and_send_prompt
 from fast_graphrag._llm._base import BaseEmbeddingService
 from fast_graphrag._models import TAnswer
@@ -11,9 +10,9 @@ from fast_graphrag._prompt import PROMPTS
 from fast_graphrag._services._chunk_extraction import BaseChunkingService
 from fast_graphrag._services._information_extraction import BaseInformationExtractionService
 from fast_graphrag._services._state_manager import BaseStateManagerService
-from fast_graphrag._storage._base import BaseStorage
 from fast_graphrag._types import GTChunk, GTEdge, GTEmbedding, GTHash, GTId, GTNode, TContext, TDocument, TQueryResponse
 from fast_graphrag._utils import TOKEN_TO_CHAR_RATIO, get_event_loop, logger
+
 
 
 @dataclass
@@ -32,11 +31,9 @@ class QueryParam:
 
 @dataclass
 class BaseGraphRAG(Generic[GTEmbedding, GTHash, GTChunk, GTNode, GTEdge, GTId]):
-    """A base class for Graph-based Retrieval-Augmented Generation (GraphRAG) systems."""
     """A class representing a Graph-based Retrieval-Augmented Generation system."""
-
     working_dir: str = field()
-    domain: str = field()
+    domain:  str = field()
     example_queries: str = field()
     entity_types: List[str] = field()
     n_checkpoints: int = field(default=0)
@@ -45,7 +42,7 @@ class BaseGraphRAG(Generic[GTEmbedding, GTHash, GTChunk, GTNode, GTEdge, GTId]):
     chunking_service: BaseChunkingService[GTChunk] = field(init=False, default_factory=lambda: BaseChunkingService())
     information_extraction_service: BaseInformationExtractionService[GTChunk, GTNode, GTEdge, GTId] = field(
         init=False,
-        default_factory=lambda: BaseInformationExtractionService(
+        default_factory=lambda:  BaseInformationExtractionService(
             graph_upsert=BaseGraphUpsertPolicy(
                 config=None,
                 nodes_upsert_cls=BaseNodeUpsertPolicy,
@@ -62,38 +59,12 @@ class BaseGraphRAG(Generic[GTEmbedding, GTHash, GTChunk, GTNode, GTEdge, GTId]):
         ),
     )
 
-    def insert(
+    async def insert(
         self,
         content: Union[str, List[str]],
         metadata: Union[List[Optional[Dict[str, Any]]], Optional[Dict[str, Any]]] = None,
         params: Optional[InsertParam] = None,
-        show_progress: bool = True
-    ) -> Tuple[int, int, int]:
-        """Insert content into the knowledge graph.
-
-        Args:
-            content: The content to insert. Can be a single string or a list of strings.
-            metadata: Metadata associated with the content. Can be a dictionary or a list of dictionaries,
-                      corresponding to each content item.
-            params: Optional parameters for the insertion process.
-            show_progress: Whether to display a progress bar during the insertion.
-
-        Returns:
-            A tuple containing the number of entities, relationships, and chunks in the knowledge graph after insertion.
-
-        Raises:
-            Exception: If any error occurs during the insertion process.
-
-        Example:
-            
-        return get_event_loop().run_until_complete(self.async_insert(content, metadata, params, show_progress))
-
-    async def async_insert(
-        self,
-        content: Union[str, List[str]],
-        metadata: Union[List[Optional[Dict[str, Any]]], Optional[Dict[str, Any]]] = None,
-        params: Optional[InsertParam] = None,
-        show_progress: bool = True
+        show_progress: bool = True,
     ) -> Tuple[int, int, int]:
         """Insert a new memory or memories into the graph.
 

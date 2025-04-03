@@ -2,25 +2,17 @@ from dataclasses import dataclass, field
 from typing import (
     Any,
     Awaitable,
-    Callable,
     Dict,
     Generic,
     Iterable,
     List,
-    Literal,
     Mapping,
     Optional,
     Tuple,
     Union,
-    final,
 )
-
-from scipy.sparse import csr_matrix  # type: ignore
-
-from fast_graphrag._types import GTBlob, GTEdge, GTEmbedding, GTId, GTKey, GTNode, GTValue, TIndex, TScore
-from fast_graphrag._utils import logger
-
-from ._namespace import Namespace
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 
 
 @dataclass
